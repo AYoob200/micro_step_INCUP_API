@@ -11,8 +11,6 @@ from decomposition_agent import DecompositionAgent
 
 # Initialize Flask app
 app = Flask(__name__)
-# Preserve JSON key order
-app.config['JSON_SORT_KEYS'] = False
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

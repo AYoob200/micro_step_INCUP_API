@@ -74,7 +74,12 @@ class DecompositionStep:
             return False, "step_title cannot be empty"
 
         valid_tags = {"Interest", "Novelty", "Challenge", "Urgency", "Passion"}
-        if not self.incup_tags or self.incup_tags not in valid_tags:
+        # Handle both string and list types for incup_tags
+        tag_to_check = self.incup_tags
+        if isinstance(self.incup_tags, list):
+            tag_to_check = self.incup_tags[0] if self.incup_tags else None
+
+        if not tag_to_check or tag_to_check not in valid_tags:
             return (
                 False,
                 f"incup_tags must be one of {valid_tags}, got {self.incup_tags}",
@@ -121,6 +126,7 @@ class DecompositionWorkblock:
                 }
             },
             indent=2,
+            sort_keys=False,
         )
 
     def to_dict(self) -> Dict:
@@ -259,6 +265,11 @@ class DecompositionAgent:
 
         steps = []
         for step_data in task_data.get("steps", []):
+            # Handle incup_tags - convert list to string if needed
+            incup_tags = step_data.get("incup_tags", "Interest")
+            if isinstance(incup_tags, list):
+                incup_tags = incup_tags[0] if incup_tags else "Interest"
+
             step = DecompositionStep(
                 step_id=(
                     int(step_data.get("step_id", 0)) if step_data.get("step_id") else 0
@@ -271,7 +282,7 @@ class DecompositionAgent:
                 novelty_hook=step_data.get("novelty_hook", "none"),
                 passion_anchor=step_data.get("passion_anchor"),
                 urgency_cue=step_data.get("urgency_cue"),
-                incup_tags=step_data.get("incup_tags", "Interest"),
+                incup_tags=incup_tags,
             )
             steps.append(step)
 
