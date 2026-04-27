@@ -1,4 +1,4 @@
-# Dopamine Coach - Gemini Provider README
+# Dopamine Coach - Gemini Provider with Flask API
 
 ## Quick Start
 
@@ -11,23 +11,25 @@ pip install -r requirements.txt
 ### 2. Set Up Environment Variables
 
 ```bash
-cp .env.example .env
 # Edit .env and add your Gemini API key
+GEMINI_API_KEY=your_api_key_here
 ```
 
-### 3. Run Example
+### 3. Run Flask API Server
 
 ```bash
-python example_usage.py
+python API.py
 ```
+
+The API will start on `http://localhost:5000`
 
 ## Project Structure
 
+- `API.py` - Flask API server for task decomposition
 - `decomposition_agent.py` - Core Gemini decomposition agent logic
 - `config.py` - Gemini API configuration and settings
 - `system_prompt.py` - AI Constitution and output specification
-- `utils.py` - JSON validation and formatting utilities
-- `example_usage.py` - Usage examples and demonstrations
+- `requirements.txt` - Python dependencies
 
 ## Configuration
 
@@ -35,41 +37,86 @@ All settings are managed in `config.py`:
 
 - `API_PROVIDER`: Set to "gemini"
 - `MODEL_ID`: Gemini model ("gemini-2.5-flash")
-- `API_BASE_URL`: Gemini endpoint ("https://generativelanguage.googleapis.com/v1beta/openai/")
-- `API_KEY`: Read from GEMINI_API_KEY environment variable
 - `TEMPERATURE`: Creativity level (0.7 for balanced)
 - `MAX_TOKENS`: Maximum response length (2000)
+- `ENABLE_JSON_VALIDATION`: Enable output validation (True)
 
-## Usage
+## API Usage
 
-### Basic Decomposition
+### Endpoints
 
-```python
-from decomposition_agent import DecompositionAgent
+#### POST `/decompose` - Decompose a task
 
-agent = DecompositionAgent()
-result = agent.decompose("I need to refactor my authentication system")
-print(result.to_json())
+Accepts a user intention and returns decomposed steps.
+
+**Request:**
+
+```json
+{
+  "user_input": "I need to redesign my database schema for better performance"
+}
 ```
 
-### Batch Processing
+**Response:**
 
-```python
-user_inputs = [
-    "Set up CI/CD pipeline",
-    "Implement rate limiting",
-    "Migrate database"
-]
-results = agent.batch_decompose(user_inputs)
+```json
+{
+  "task": {
+    "task_id": 1,
+    "task_title": "Redesign database schema for better performance",
+    "task_priority": "High",
+    "intent_priority": "High",
+    "estimated_total_session_time": 120,
+    "total_steps": 3,
+    "steps": [...]
+  }
+}
 ```
 
-### Validation
+#### GET `/health` - Health check
+
+Returns the health status of the API.
+
+**Response:**
+
+```json
+{
+  "status": "healthy",
+  "service": "Decomposition Agent API"
+}
+```
+
+#### GET `/` - API documentation
+
+Returns API documentation and available endpoints.
+
+### Example Requests
+
+**Using curl:**
+
+```bash
+# Decompose a task
+curl -X POST http://localhost:5000/decompose \
+  -H "Content-Type: application/json" \
+  -d '{"user_input": "Build an authentication system with OAuth2"}'
+
+# Health check
+curl http://localhost:5000/health
+
+# View documentation
+curl http://localhost:5000/
+```
+
+**Using Python requests:**
 
 ```python
-is_valid, errors = result.validate_all()
-if not is_valid:
-    for error in errors:
-        print(f"Validation error: {error}")
+import requests
+
+response = requests.post(
+    "http://localhost:5000/decompose",
+    json={"user_input": "Set up a CI/CD pipeline"}
+)
+print(response.json())
 ```
 
 ## Output Format
@@ -79,7 +126,7 @@ All outputs are JSON-only (no markdown or UI formatting):
 ```json
 {
   "task": {
-    "task_id": "1",
+    "task_id": 1,
     "task_title": "Refactor authentication system",
     "task_priority": "High",
     "intent_priority": "High",
@@ -87,29 +134,25 @@ All outputs are JSON-only (no markdown or UI formatting):
     "total_steps": 3,
     "steps": [
       {
-        "step_id": "1",
+        "step_id": 1,
         "step_title": "Identify security vulnerabilities",
-        "decomposition": "Scan code for vulnerabilities...",
+        "description": "Scan code for vulnerabilities...",
         "estimated_time": 8,
         "primary_verb": "Identify",
         "deliverable": "List of 3 vulnerabilities",
-        "novelty_hook": "constraint-output",
+        "novelty_hook": "Learn security best practices",
         "passion_anchor": "This determines system security",
         "urgency_cue": "Within your 8-minute window",
-        "incup_tags": ["Passion"]
+        "incup_tags": "Passion"
       }
     ]
   }
 }
 ```
 
-## API Documentation
-
-Visit https://platform.gemini.com/docs for Gemini API documentation.
-
 ## Troubleshooting
 
 - **Invalid API Key**: Ensure GEMINI_API_KEY is set correctly in .env
-- **Module Imports**: Run from gemini/ directory or add to PYTHONPATH
+- **Connection refused**: Make sure Flask API is running with `python API.py`
+- **Port 5000 in use**: Change the port in API.py or kill the process using port 5000
 - **Validation Errors**: Check step structure against AI Constitution rules
-- **Insufficient Balance**: Ensure your Gemini account has credits

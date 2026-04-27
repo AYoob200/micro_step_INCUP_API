@@ -18,7 +18,7 @@ class DecompositionStep:
 
     def __init__(
         self,
-        step_id: str,
+        step_id: int,
         step_title: str,
         description: str,
         estimated_time: int,
@@ -27,7 +27,7 @@ class DecompositionStep:
         novelty_hook: str,
         passion_anchor: Optional[str],
         urgency_cue: Optional[str],
-        incup_tags: List[str],
+        incup_tags: str,
     ):
         self.step_id = step_id
         self.step_title = step_title
@@ -73,12 +73,12 @@ class DecompositionStep:
         if not self.step_title:
             return False, "step_title cannot be empty"
 
-        if not self.incup_tags or len(self.incup_tags) != 1:
-            return False, "incup_tags must contain exactly one tag"
-
         valid_tags = {"Interest", "Novelty", "Challenge", "Urgency", "Passion"}
-        if self.incup_tags[0] not in valid_tags:
-            return False, f"Invalid INCUP tag: {self.incup_tags[0]}"
+        if not self.incup_tags or self.incup_tags not in valid_tags:
+            return (
+                False,
+                f"incup_tags must be one of {valid_tags}, got {self.incup_tags}",
+            )
 
         return True, None
 
@@ -88,7 +88,7 @@ class DecompositionWorkblock:
 
     def __init__(
         self,
-        task_id: str,
+        task_id: int,
         task_title: str,
         task_priority: str,
         intent_priority: str,
@@ -260,7 +260,9 @@ class DecompositionAgent:
         steps = []
         for step_data in task_data.get("steps", []):
             step = DecompositionStep(
-                step_id=step_data.get("step_id", ""),
+                step_id=(
+                    int(step_data.get("step_id", 0)) if step_data.get("step_id") else 0
+                ),
                 step_title=step_data.get("step_title", ""),
                 description=step_data.get("description", ""),
                 estimated_time=step_data.get("estimated_time", 0),
@@ -269,12 +271,12 @@ class DecompositionAgent:
                 novelty_hook=step_data.get("novelty_hook", "none"),
                 passion_anchor=step_data.get("passion_anchor"),
                 urgency_cue=step_data.get("urgency_cue"),
-                incup_tags=step_data.get("incup_tags", []),
+                incup_tags=step_data.get("incup_tags", "Interest"),
             )
             steps.append(step)
 
         workblock = DecompositionWorkblock(
-            task_id=task_data.get("task_id", "1"),
+            task_id=int(task_data.get("task_id", 1)) if task_data.get("task_id") else 1,
             task_title=task_data.get("task_title", ""),
             task_priority=task_data.get("task_priority", "Mid"),
             intent_priority=task_data.get("intent_priority", "Medium"),
