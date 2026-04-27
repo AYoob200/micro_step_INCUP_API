@@ -16,7 +16,7 @@ class ConfigGemini:
 
     # API Configuration for Gemini
     API_PROVIDER = "gemini"
-    MODEL_ID = "gemini-2.5-flash"
+    MODEL_ID = "gemini-2.5-pro"  # Example model, adjust as needed
     API_KEY = os.getenv("GEMINI_API_KEY", "your_gemini_api_key_here")
 
     # Agent Configuration

@@ -191,6 +191,17 @@ class DecompositionAgent:
         # Configure Google GenAI client
         genai.configure(api_key=self.api_key)
 
+        # Singleton Model Pattern: Initialize model once with system instruction
+        # This eliminates the Cold Start overhead of re-processing the 400-line system prompt
+        self.model_instance = genai.GenerativeModel(
+            model_name=self.model,
+            system_instruction=get_system_prompt(),
+            generation_config=genai.types.GenerationConfig(
+                temperature=ConfigGemini.TEMPERATURE,
+                max_output_tokens=ConfigGemini.MAX_TOKENS,
+            ),
+        )
+
         self.logger.info(
             f"Gemini Decomposition Agent initialized with model: {self.model}"
         )
@@ -217,18 +228,17 @@ class DecompositionAgent:
         self.logger.info(f"Decomposing user input: {user_input[:100]}...")
 
         try:
-            # Create model instance with system instruction
-            model = genai.GenerativeModel(
-                model_name=self.model,
-                system_instruction=get_system_prompt(),
-                generation_config=genai.types.GenerationConfig(
-                    temperature=ConfigGemini.TEMPERATURE,
-                    max_output_tokens=ConfigGemini.MAX_TOKENS,
-                ),
+            # Use streaming to collect response chunks in real-time
+            response_stream = self.model_instance.generate_content(
+                user_input, stream=True
             )
 
-            response = model.generate_content(user_input)
-            raw_response = response.text
+            # Collect all response chunks into a single string
+            raw_response = ""
+            for chunk in response_stream:
+                if chunk.text:
+                    raw_response += chunk.text
+
             self.logger.debug(f"Raw API response: {raw_response}")
 
             result = self._parse_response(raw_response)
